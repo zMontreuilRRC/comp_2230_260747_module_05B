@@ -49,30 +49,7 @@ async function getCountriesWithFilter(fields, pathParam = null, endpoint = "all"
             throw new Error(`HTTP error: ${dataResponse.status}`);
         }
 
-        const jsonData = await dataResponse.json();
-
-        // reduce the data to only include a few fields in a new array
-        // map callback creates a new array with whatever is returned from elements in the old array
-        const newDataMap = jsonData.map((countryElement) => {
-            // whatever value is returned here is included in the new array
-            // destructuring syntax
-            const {
-                name: {official}, // nested destructuring: the "deepest" level of the object named is made a variable
-                population, 
-                area, 
-                region
-            } = countryElement;
-
-            return {
-                "name": official,
-                "population": population,
-                "area": area,
-                "region": region // equivalent of "countryElement["region"]"
-            }
-        });
-
-        return newDataMap;
-
+        return dataResponse.json();
     } catch(error) {
         console.log(error);
     }
@@ -89,14 +66,23 @@ function displayCountries(data) {
     data.forEach(country => {
         const newCountryNode = document.createElement("p");
         
-        // extract the common name of the country and place it in the node
-        let countryText = country["name"]["common"];
+        // destructuring syntax to pull relevant values from the object when iterated over
+        const {
+            name: {official},
+            population,
+            area,
+            region,
+            fifa
+        } = country;
+
+        let countryText = `${official} is a country in ${region}. It has an area of ${area} square kilometres,
+        and a population of ${population}.`
 
         // check if "fifa" property exists on country object
-        if(country["fifa"]) {
-            countryText += " has a football team.";
+        if(fifa) {
+            countryText += " It has a football team.";
         } else {
-            countryText += " does not have a football team."
+            countryText += " It does not have a football team."
         }
         
         newCountryNode.textContent = countryText;
@@ -106,6 +92,5 @@ function displayCountries(data) {
 
 async function getAndShowCountries() {
     const data = await getCountriesWithFilter([]);
-    console.log(data);
-    // displayCountries(data);
+    displayCountries(data);
 }
