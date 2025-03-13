@@ -25,6 +25,7 @@ async function getCountries() {
 
 /**
  * Send a request to a Countries endpoint with an array of filters to reduce the data received
+ * Reduces the data down to a country's official name, population, region, and area 
  * @param {String[]} fields - array of strings for specified sets of data to be returned with each country
  * @param {String} [pathParam="null"] pathParam - query string to be included with request, if any
  * @param {String} [endpoint="all"] endpoint - endpoint of the query 
@@ -36,6 +37,10 @@ async function getCountriesWithFilter(fields, pathParam = null, endpoint = "all"
     if(pathParam && pathParam.trim().length > 0) {
         query += `/${pathParam}`;
     }
+
+    if(fields.length > 0) {
+        query += `?fields=${fields.toString()}`
+    }
     
     try {
         const dataResponse = await fetch(query);
@@ -43,14 +48,38 @@ async function getCountriesWithFilter(fields, pathParam = null, endpoint = "all"
         if(!dataResponse.ok) {
             throw new Error(`HTTP error: ${dataResponse.status}`);
         }
-        return dataResponse.json();
+
+        const jsonData = await dataResponse.json();
+
+        // reduce the data to only include a few fields in a new array
+        // map callback creates a new array with whatever is returned from elements in the old array
+        const newDataMap = jsonData.map((countryElement) => {
+            // whatever value is returned here is included in the new array
+            // destructuring syntax
+            const {
+                name: {official}, // nested destructuring: the "deepest" level of the object named is made a variable
+                population, 
+                area, 
+                region
+            } = countryElement;
+
+            return {
+                "name": official,
+                "population": population,
+                "area": area,
+                "region": region // equivalent of "countryElement["region"]"
+            }
+        });
+
+        return newDataMap;
+
     } catch(error) {
         console.log(error);
     }
 }
 
 /**
- * 
+ * Iterate over an array of Country objects and append their data to the document in a paragraph.
  * @param {Object[]} data - Array of objects representing data about Countries
  */
 function displayCountries(data) {
@@ -77,5 +106,6 @@ function displayCountries(data) {
 
 async function getAndShowCountries() {
     const data = await getCountriesWithFilter([]);
-    displayCountries(data);
+    console.log(data);
+    // displayCountries(data);
 }
